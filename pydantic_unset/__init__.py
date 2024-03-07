@@ -28,10 +28,24 @@ class Unset(object):
         source: Type[Any],
         handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
+        assert source is Unset
+
+        def validate_from_undefined(value):
+            if value is not Unset():
+                raise ValueError(f"expected Unset, got {value}")
+
+        serialization_schema = core_schema.plain_serializer_function_ser_schema(
+            lambda v: None
+        )
+        instance_validation_schema = core_schema.is_instance_schema(
+            Unset, serialization=serialization_schema
+        )
+        json_validation_schema = core_schema.no_info_plain_validator_function(
+            function=validate_from_undefined, serialization=serialization_schema
+        )
+
         return core_schema.json_or_python_schema(
-            json_schema=core_schema.none_schema(),
-            python_schema=core_schema.none_schema(),
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                lambda c: None
-            ),
+            json_schema=json_validation_schema,
+            python_schema=instance_validation_schema,
+            serialization=serialization_schema,
         )
